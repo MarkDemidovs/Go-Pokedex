@@ -21,6 +21,11 @@ func startRepl() {
 			description: "Exit the Pokedex",
 			callback:    commandExit,
 		},
+		"help": {
+			name:        "help",
+			description: "Exit the Pokedex",
+			callback:    commandHelp,
+		},
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
