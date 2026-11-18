@@ -1,6 +1,25 @@
 package main
 
-import "strings"
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func startRepl() {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		fmt.Print("Pokedex > ")
+		scanner.Scan()
+		line := scanner.Text()
+
+		clean := cleanInput(line)
+		fmt.Println("Your command was", clean[0])
+
+	}
+}
 
 func cleanInput(text string) []string {
 	dividedText := make([]string, 0)
