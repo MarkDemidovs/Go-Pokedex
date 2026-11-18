@@ -5,55 +5,58 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/markdemidovs/go-pokedex/internal/pokeapi"
 )
 
 type config struct {
-	commands map[string]cliCommand
-}
-
-type cliCommand struct {
-	name        string
-	description string
-	callback    func(*config) error
+	commands         map[string]cliCommand
+	pokeapiClient    pokeapi.Client
+	nextLocationsURL *string
+	prevLocationsURL *string
 }
 
 func startRepl(cfg *config) {
-
-	scanner := bufio.NewScanner(os.Stdin)
-
+	reader := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
-		scanner.Scan()
-		line := scanner.Text()
+		reader.Scan()
 
-		clean := cleanInput(line)
-
-		if len(clean) == 0 {
+		words := cleanInput(reader.Text())
+		if len(words) == 0 {
 			continue
 		}
 
-		firstArgument := clean[0]
+		commandName := words[0]
+		args := []string{}
+		if len(words) > 1 {
+			args = words[1:]
+		}
 
-		command, ok := cfg.commands[firstArgument]
-		if !ok {
-			fmt.Println("Unknown command")
-		} else {
-			err := command.callback(cfg)
+		command, exists := cfg.commands[commandName]
+		if exists {
+			err := command.callback(cfg, args...)
 			if err != nil {
 				fmt.Println(err)
 			}
+			continue
+		} else {
+			fmt.Println("Unknown command")
+			continue
 		}
 	}
 }
 
 func cleanInput(text string) []string {
-	dividedText := make([]string, 0)
-	for _, word := range strings.Fields(text) {
-		formattedWord := strings.ToLower(word)
-		dividedText = append(dividedText, formattedWord)
-	}
+	output := strings.ToLower(text)
+	words := strings.Fields(output)
+	return words
+}
 
-	return dividedText
+type cliCommand struct {
+	name        string
+	description string
+	callback    func(*config, ...string) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -62,6 +65,21 @@ func getCommands() map[string]cliCommand {
 			name:        "help",
 			description: "Displays a help message",
 			callback:    commandHelp,
+		},
+		"explore": {
+			name:        "explore <location_name>",
+			description: "Explore a location",
+			callback:    commandExplore,
+		},
+		"map": {
+			name:        "map",
+			description: "Get the next page of locations",
+			callback:    commandMapf,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Get the previous page of locations",
+			callback:    commandMapb,
 		},
 		"exit": {
 			name:        "exit",
